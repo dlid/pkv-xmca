@@ -1,0 +1,32 @@
+{
+  "name": "pkv-xtouch-mini",
+  "version": "1.0.0",
+  "description": "Small utility for camera control using XTouch mini",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "node node_modules/typescript/bin/tsc",
+    "start": "node node_modules/tsc-watch/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dlid/pkv-xtouch-mini.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dlid/pkv-xtouch-mini/issues"
+  },
+  "homepage": "https://github.com/dlid/pkv-xtouch-mini#readme",
+  "devDependencies": {
+    "tsc-watch": "^4.5.0",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "@dlid/savona": "file:../savona",
+    "commander": "^8.3.0",
+    "date-fns": "^2.25.0",
+    "easymidi": "^2.1.0",
+    "rxjs": "^7.4.0"
+  }
+}
