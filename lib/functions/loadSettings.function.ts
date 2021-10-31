@@ -12,8 +12,8 @@ export function loadConfiguration(filename: string): ConfigurationRoot | undefin
         const fileBuffer = readFileSync(filename);
         fileContent = fileBuffer.toString();
     } catch (ex: any) {
-        logger.error(`Could not load config file ${filename}`, ex)
-        process.exit(11);
+        logger.debug(`Could not load config file ${filename}`, ex)
+        return undefined;
     }
     
     try {

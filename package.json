@@ -1,6 +1,6 @@
 {
-  "name": "pkv-xtouch-mini",
-  "version": "1.0.0",
+  "name": "@dlid/pkv-xmca",
+  "version": "0.0.5",
   "description": "Small utility for camera control using XTouch mini",
   "main": "dist/index.js",
   "scripts": {
@@ -27,6 +27,7 @@
     "commander": "^8.3.0",
     "date-fns": "^2.25.0",
     "easymidi": "^2.1.0",
+    "platform-folders": "^0.5.4",
     "rxjs": "^7.4.0"
   }
 }
