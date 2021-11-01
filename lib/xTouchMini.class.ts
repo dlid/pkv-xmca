@@ -125,6 +125,14 @@ export class XTouchMini {
         }
     }
 
+    public setControllerValue(controller: number, value: number): void {
+        this.output?.send('cc', {
+            controller: controller,
+            value: value,
+            channel: 10
+        });
+    }
+
     private animationTick(controller: number): void {
         if (this.isConnected) {
             this.output?.send('cc', {

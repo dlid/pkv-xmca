@@ -123,7 +123,10 @@ export function startup(config: ConfigurationRoot): Promise<PkvContext> {
 
             return run()
             .then(run)
-            .then(resolver);
+            .then(resolver)
+            .catch(x => {
+                console.log("ERROR 2", x);
+            })
 
         }).catch((error) => {
             console.log("Error: " + error);

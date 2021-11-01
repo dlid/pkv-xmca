@@ -1,6 +1,6 @@
 import { Logger } from './log/logService.class';
 import { ConfigurationRoot } from './types/configuration.types';
-import { Camera } from '@dlid/savona';
+import { Camera, CameraConnectionStatus } from '@dlid/savona';
 import { loadConfiguration } from './functions/loadSettings.function';
 import { PkvContext, startup } from './functions/startup.function';
 import { Argument, Command  } from 'commander';
@@ -9,6 +9,7 @@ import { resolveConfigurationPaths } from './functions/resolveConfigurationPaths
 import { getConfigFilenameCommand } from './commands/get-config-filename.command';
 import { ControlChange } from 'easymidi';
 import { getVersion } from './functions/getVersion';
+import { differenceInMilliseconds } from 'date-fns';
 
 const program = new Command();
 const logger = Logger.getInstance();
@@ -75,10 +76,11 @@ async function onControllerChange(context: PkvContext, change: ControlChange): P
                 if (cameraIrisTimer[cam.host]) {
                     clearTimeout(cameraIrisTimer[cam.host]);
                 }
-                cameraIrisTimer[cam.host] = setTimeout( async () => {
-                    console.log("SET IRIS VALUE", controllerValueAsPercent);
-                }, cameraIrisApplyMs);
-
+                const valueFromPercent = await cam.Iris.GetValueFromPercent(controllerValueAsPercent);
+                if (valueFromPercent && tmpLastSetValue[cam.host]?.value != valueFromPercent) {
+                    tmpLastSetValue[cam.host] = {value: valueFromPercent, time: new Date()};
+                    await cam.Iris.SetValue(valueFromPercent as number);
+                }
             } else {
                 logger.info(`"{color:cyan}${cameras[0]}{color}" (${cam.host}) - is {color:yellow}not connected`);
             }
@@ -88,16 +90,65 @@ async function onControllerChange(context: PkvContext, change: ControlChange): P
 }
 
 
+const tmpLastSetValue: { [key: string]: { value: number, time: Date }} = {};
+
 (async () => {
     await startup(config).then(context => {
         context.xTouchMini.controllerChange.subscribe(async change => await onControllerChange(context, change));        
 
         // Subscribe to iris changes
-        context.cameraManager.getCameraNames().forEach(cameraName => {
+        context.cameraManager.getCameraNames().forEach(async cameraName => {
             const cam = context.cameraManager.getCamera(cameraName);
 
-            cam.Iris.addChangeHandler(val => {
-                console.warn("CAMERA SAYS IRIS IS AT", val)
+            cam.connectionStatus.subscribe(async status => {
+                if (status == CameraConnectionStatus.Connected) {
+                    const irisValue = await cam.Iris.GetValue();
+                    const irisValuePercent = await cam.Iris.GetPercentFromValue(irisValue);
+                    let pos = (irisValuePercent as number / 127) * 127;
+                    const irisController = context.cameraManager.getConfiguration(cameraName).iris?.controller;
+                    if (irisController) {                    
+
+                        context.xTouchMini.setControllerValue(irisController, pos)
+                    }
+                }
+            });
+
+            cam.Iris.addChangeHandler(async val => {
+                
+                const config = context.cameraManager.getConfiguration(cameraName);
+
+                if (config.iris?.controller) {
+                    
+                    let theValue = await cam.Iris.GetPercentFromValue(val.Value as number) ;
+
+                    let pos = (theValue as number / 127) * 127;
+
+
+
+                    if (tmpLastSetValue[cam.host]?.value != val.Value) {
+
+                        if (tmpLastSetValue[cam.host]?.time) {
+                            const diff = differenceInMilliseconds(new Date(), tmpLastSetValue[cam.host].time);
+//                            console.log("DIFF", diff);
+                            if ( typeof diff !== 'undefined' && diff > 150) {
+                                return;
+                            }
+                        } else {
+                            context.xTouchMini.setControllerValue(config.iris.controller, pos);
+                        }
+
+                    }
+                    // console.log("GOTIT", val.Value, ' => last set:', tmpLastSetValue[cam.host]);
+                    // console.log("VAL", val.Value, "=>", theValue + '%', 'pos =>', pos);
+                    // context.xTouchMini.setControllerValue(config.iris.controller, pos);
+                    //context.xTouchMini.
+                    //stopControllerLoadingAnimation.
+
+
+                    //console.warn("CAMERA SAYS IRIS IS AT", val)
+
+                }
+
             });
 
         })

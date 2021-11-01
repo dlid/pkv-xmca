@@ -24,10 +24,12 @@ export class CameraManager {
             
             this.cameras[cameraName] = new Camera(settings.host, settings.username, settings.password, '');
 
-            this.cameras[cameraName].connectionStatus.pipe(skip(1)).subscribe(s => {
+            this.cameras[cameraName].connectionStatus.pipe(skip(1)).subscribe(async s => {
                 if (s === CameraConnectionStatus.Connected) {
                     this.logger.info(`"{color:cyan}${cameraName}{color}" - {color:green}Connected!`);
                     delete cameraConnectionAttempts[cameraName];
+
+
                 } else if (s === CameraConnectionStatus.Disconnected) {
                     this.logger.info(`"{color:cyan}${cameraName}{color}" - {color:yellow}Camera Connection lost`);
                 } else if (s === CameraConnectionStatus.Connecting) {
