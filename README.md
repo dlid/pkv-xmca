@@ -1,3 +1,8 @@
+
+python 3.+
+npm install windows-build-tools (npm)
+
+
 # pkv-xmca
 
 Small utility for camera control using XTouch mini
@@ -23,6 +28,11 @@ Update the configuration file with the IP Addresses to your cameras, and the Con
 Run pkv-xmca and point toward your configuration file:
 
     pkv-xmca ./pkv-xmca.json
+
+
+
+
+
 
 
 # Thank you's
