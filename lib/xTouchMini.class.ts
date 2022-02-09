@@ -3,6 +3,12 @@ import * as easymidi from 'easymidi';
 import { Observable, Subject } from 'rxjs';
 import { Logger, LogService } from './log/logService.class';
 
+export interface NotChangeEvent {
+    channel: easymidi.Channel;
+    note: number;
+    velocity: number;
+    type: 'on' | 'off';
+}
 
 export class XTouchMini {
 
@@ -15,6 +21,7 @@ export class XTouchMini {
     private isDeviceConnected = false;
     private log: LogService;
     private controllerChangeSubject = new Subject<easymidi.ControlChange>();
+    private noteChangeSubject = new Subject<NotChangeEvent>();
     private loaders: { [key: number]: { timer: NodeJS.Timer, value: number, delay: number, direction: number } } = {};
 
     private connectionAttempt = 0;
@@ -30,6 +37,12 @@ export class XTouchMini {
     public get controllerChange(): Observable<easymidi.ControlChange> {
         return this.controllerChangeSubject.asObservable();
     }
+
+    public get noteChange(): Observable<NotChangeEvent> {
+        return this.noteChangeSubject.asObservable();
+    }
+
+    
 
     public get isConnected(): boolean {
         return this.isDeviceConnected;
@@ -133,6 +146,16 @@ export class XTouchMini {
         });
     }
 
+    public setNoteValue(note: number, velocity: number, channel: easymidi.Channel = 0): void {
+        this.output?.send('noteon', {
+            channel: channel,
+            note: note,
+            velocity: velocity
+        });
+        
+    }
+
+
     private animationTick(controller: number): void {
         if (this.isConnected) {
             this.output?.send('cc', {
@@ -187,10 +210,22 @@ export class XTouchMini {
                 });
 
                 this.input.on('noteon', (msg) => {
+                    this.noteChangeSubject.next({
+                        type: 'on',
+                        channel: msg.channel,
+                        velocity: msg.velocity,
+                        note: msg.note
+                    });
                     this.log.debug(`INPUT '{color:green}noteon{color}' channel: ${msg.channel} note: {color:cyan}${msg.note}{color} velocity: {color:yellow}${msg.velocity}{color}`);
                 });
 
                 this.input.on('noteoff', (msg) => {
+                    this.noteChangeSubject.next({
+                        type: 'off',
+                        channel: msg.channel,
+                        velocity: msg.velocity,
+                        note: msg.note
+                    });
                     this.log.debug(`INPUT '{color:yellow}noteoff{color}' channel: ${msg.channel} note: {color:cyan}${msg.note}{color} velocity: {color:yellow}${msg.velocity}{color}`);
                 });
 

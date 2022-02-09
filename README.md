@@ -3,6 +3,8 @@ python 3.+
 npm install windows-build-tools (npm)
 
 
+
+
 # pkv-xmca
 
 Small utility for camera control using XTouch mini

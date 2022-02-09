@@ -10,6 +10,7 @@ import { getConfigFilenameCommand } from './commands/get-config-filename.command
 import { ControlChange } from 'easymidi';
 import { getVersion } from './functions/getVersion';
 import { differenceInMilliseconds } from 'date-fns';
+import { NotChangeEvent } from './xTouchMini.class';
 
 const program = new Command();
 const logger = Logger.getInstance();
@@ -64,7 +65,7 @@ async function onControllerChange(context: PkvContext, change: ControlChange): P
     const cameras = context.cameraManager.getCamerasForController(change.controller, change.channel);
     const controllerValueAsPercent = (change.value / 127);
     
-    //console.log(`${change.controller} => `, controllerValueAsPercent);
+    // console.log(`${change.controller} => `, controllerValueAsPercent);
 
     if (cameras.length === 1) {
         
@@ -89,12 +90,45 @@ async function onControllerChange(context: PkvContext, change: ControlChange): P
     }
 }
 
+async function onNoteChange(context: PkvContext, change: NotChangeEvent): Promise<void> {
+
+    if (change.type == 'on') {
+        context.cameraManager.getCameraNames().forEach(async camName => {
+            const config = context.cameraManager.getConfiguration(camName);
+            const cam = context.cameraManager.getCamera(camName);
+
+            logger.debug(`OnNoteChange`, change);
+
+            if (config.iris?.setManualNote) {
+                logger.debug(`camera config manual button`, config.iris?.setManualNote);
+                if (config.iris?.setManualNote == change.note) {
+                    const currentSetting = await cam.Iris.GetSetting();
+                    logger.debug(`iris setting`, currentSetting);
+                    if (currentSetting == 'Automatic') {
+                        logger.debug(`Setting to manual`);
+                        await cam.Iris.SetManual();
+                        const irisValue = await cam.Iris.GetValue();
+                        const irisValuePercent = await cam.Iris.GetPercentFromValue(irisValue);
+                        let pos = (irisValuePercent as number / 127) * 127;
+                        const irisController = context.cameraManager.getConfiguration(camName).iris?.controller;
+                        if (irisController) {                    
+                            context.xTouchMini.setControllerValue(irisController, pos)
+                        }
+                    }
+                }
+            }
+
+        })
+    }
+
+}
 
 const tmpLastSetValue: { [key: string]: { value: number, time: Date }} = {};
 
 (async () => {
     await startup(config).then(context => {
         context.xTouchMini.controllerChange.subscribe(async change => await onControllerChange(context, change));        
+        context.xTouchMini.noteChange.subscribe(async change => await onNoteChange(context, change))
 
         // Subscribe to iris changes
         context.cameraManager.getCameraNames().forEach(async cameraName => {
@@ -102,6 +136,23 @@ const tmpLastSetValue: { [key: string]: { value: number, time: Date }} = {};
 
             cam.connectionStatus.subscribe(async status => {
                 if (status == CameraConnectionStatus.Connected) {
+
+                    const settingValue = await cam.Iris.GetSetting();
+                    const settingNote = context.cameraManager.getConfiguration(cameraName).iris?.settingBlinkNote;
+
+                    if (typeof settingNote !== 'undefined') {
+                        if (settingValue == 'Automatic') {
+                            context.xTouchMini.setNoteValue(settingNote, 2);
+                        } else {
+                            context.xTouchMini.setNoteValue(settingNote, 0);
+                        }
+                    }
+
+                   // console.warn("LAAALAL", settingNote)
+                   // context.xTouchMini.setNoteValue(<any>settingNote, 2, 10);
+                   // context.xTouchMini.setNoteValue(2, 2);
+//                        cam.Iris.SetManual();
+
                     const irisValue = await cam.Iris.GetValue();
                     const irisValuePercent = await cam.Iris.GetPercentFromValue(irisValue);
                     let pos = (irisValuePercent as number / 127) * 127;
@@ -113,9 +164,27 @@ const tmpLastSetValue: { [key: string]: { value: number, time: Date }} = {};
                 }
             });
 
+            cam.Iris.onSettingMethodChanged(async setting => {
+                // console.log("SETTING: ", setting);
+                const settingNote = context.cameraManager.getConfiguration(cameraName).iris?.settingBlinkNote;
+
+                if (typeof settingNote !== 'undefined') {
+                    if (setting == 'Automatic') {
+                        // console.log("SET", settingNote, "to", 2);
+                        context.xTouchMini.setNoteValue(settingNote, 2);
+                    } else {
+                        // console.log("SET", settingNote, "to", 0);
+                        context.xTouchMini.setNoteValue(settingNote, 0);
+                    }
+                }
+
+            })
+
             cam.Iris.addChangeHandler(async val => {
                 
                 const config = context.cameraManager.getConfiguration(cameraName);
+
+//                console.log(val);
 
                 if (config.iris?.controller) {
                     

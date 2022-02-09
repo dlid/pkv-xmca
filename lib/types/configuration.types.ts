@@ -10,5 +10,7 @@ export interface CameraConfiguration {
     iris?: {
         channel?: number;
         controller: number;
+        settingBlinkNote?: number;
+        setManualNote?: number;
     }
 }
