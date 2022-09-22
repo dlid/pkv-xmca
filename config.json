@@ -3,7 +3,7 @@
         "camera1": {
             "host": "192.168.0.81",
             "username": "admin",
-            "password": "",
+            "password": "ABCDEF11",
             "iris": {
                 "controller": 1,
                 "settingBlinkNote": 0,
@@ -13,7 +13,7 @@
         "camera2": {
             "host": "192.168.0.82",
             "username": "admin",
-            "password": "",
+            "password": "ABCDEF11",
             "iris": {
                 "controller": 2,
                 "settingBlinkNote": 1,

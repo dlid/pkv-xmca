@@ -64,6 +64,8 @@ async function onControllerChange(context: PkvContext, change: ControlChange): P
     // Try to get all cameras that have a Controller action assigned
     const cameras = context.cameraManager.getCamerasForController(change.controller, change.channel);
     const controllerValueAsPercent = (change.value / 127);
+
+    
     
     // console.log(`${change.controller} => `, controllerValueAsPercent);
 
@@ -71,17 +73,28 @@ async function onControllerChange(context: PkvContext, change: ControlChange): P
         
         const cam = context.cameraManager.getCamera(cameras[0]);
         const settings = context.cameraManager.getConfiguration(cameras[0]);
- 
+        const allIrisValues = await cam.Iris.GetIrisValues();;
         if (settings.iris?.controller == change.controller) {
             if (cam.isConnected) {
+
+                console.log(allIrisValues);
+
+                if (change.value < allIrisValues.length) {
+                    console.log("SET TO", change.value, allIrisValues[change.value]);
+
+                    await cam.Iris.SetValue(allIrisValues[change.value] as number);
+                }
+
+
                 if (cameraIrisTimer[cam.host]) {
                     clearTimeout(cameraIrisTimer[cam.host]);
                 }
                 const valueFromPercent = await cam.Iris.GetValueFromPercent(controllerValueAsPercent);
-                if (valueFromPercent && tmpLastSetValue[cam.host]?.value != valueFromPercent) {
-                    tmpLastSetValue[cam.host] = {value: valueFromPercent, time: new Date()};
-                    await cam.Iris.SetValue(valueFromPercent as number);
+                if (valueFromPercent && tmpLastSetValue[cam.host]?.value != change.value) {
+                    tmpLastSetValue[cam.host] = {value: change.value, time: new Date()};
+                    await cam.Iris.SetValue(change.value);
                 }
+
             } else {
                 logger.info(`"{color:cyan}${cameras[0]}{color}" (${cam.host}) - is {color:yellow}not connected`);
             }
@@ -114,6 +127,8 @@ async function onNoteChange(context: PkvContext, change: NotChangeEvent): Promis
                         if (irisController) {                    
                             context.xTouchMini.setControllerValue(irisController, pos)
                         }
+                    } else {
+                        await cam.Iris.SetAuto();
                     }
                 }
             }
@@ -148,6 +163,8 @@ const tmpLastSetValue: { [key: string]: { value: number, time: Date }} = {};
                         }
                     }
 
+                   // await cam.Iris.SetAuto();
+
                    // console.warn("LAAALAL", settingNote)
                    // context.xTouchMini.setNoteValue(<any>settingNote, 2, 10);
                    // context.xTouchMini.setNoteValue(2, 2);
@@ -159,22 +176,43 @@ const tmpLastSetValue: { [key: string]: { value: number, time: Date }} = {};
                     const irisController = context.cameraManager.getConfiguration(cameraName).iris?.controller;
                     if (irisController) {                    
 
-                        context.xTouchMini.setControllerValue(irisController, pos)
+                        var allValues = await cam.Iris.GetIrisValues();
+                        var index = allValues.indexOf(irisValue);
+                        
+                        context.xTouchMini.setControllerValue(irisController, index)
+
                     }
                 }
             });
 
             cam.Iris.onSettingMethodChanged(async setting => {
-                // console.log("SETTING: ", setting);
+               // console.log("iris auto/manuell: ", setting);
                 const settingNote = context.cameraManager.getConfiguration(cameraName).iris?.settingBlinkNote;
 
                 if (typeof settingNote !== 'undefined') {
                     if (setting == 'Automatic') {
                         // console.log("SET", settingNote, "to", 2);
                         context.xTouchMini.setNoteValue(settingNote, 2);
+                        setTimeout(() => {
+                            context.xTouchMini.setNoteValue(settingNote, 2);
+                        }, 100);
+
+
                     } else {
                         // console.log("SET", settingNote, "to", 0);
                         context.xTouchMini.setNoteValue(settingNote, 0);
+
+                        
+                        const hej  = context.cameraManager.getConfiguration(cameraName).iris?.controller;
+                        if (hej) {
+                        var allValues = await cam.Iris.GetIrisValues();
+                        var currentvalue = await cam.Iris.GetValue();
+
+                        const index = allValues.indexOf(currentvalue);
+                        context.xTouchMini.setControllerValue(hej,  index);
+                        }
+
+
                     }
                 }
 
@@ -188,25 +226,44 @@ const tmpLastSetValue: { [key: string]: { value: number, time: Date }} = {};
 
                 if (config.iris?.controller) {
                     
+                    console.log("iris", val.Value);
+
                     let theValue = await cam.Iris.GetPercentFromValue(val.Value as number) ;
 
                     let pos = (theValue as number / 127) * 127;
 
 
+                    var allValues = await cam.Iris.GetIrisValues();
+
+                    // if (typeof val.Value != 'undefined') {
+                       
+                    // }
+
+                    console.log("blalblbal", tmpLastSetValue[cam.host]);
 
                     if (tmpLastSetValue[cam.host]?.value != val.Value) {
-
+                        console.log("lakrits")
                         if (tmpLastSetValue[cam.host]?.time) {
                             const diff = differenceInMilliseconds(new Date(), tmpLastSetValue[cam.host].time);
-//                            console.log("DIFF", diff);
-                            if ( typeof diff !== 'undefined' && diff > 150) {
+                            console.log("tid sedan sist", diff);
+                            if ( typeof diff !== 'undefined' && diff < 50) {
                                 return;
                             }
-                        } else {
-                            context.xTouchMini.setControllerValue(config.iris.controller, pos);
+                        } 
+
+                        if (typeof val.Value != 'undefined' ) {
+                            const index = allValues.indexOf(val.Value);
+                            context.xTouchMini.setControllerValue(config.iris.controller,  index);
+                            tmpLastSetValue[cam.host] = {
+                                time: new Date(),
+                                value: val.Value
+                            }
                         }
+                        
 
                     }
+
+
                     // console.log("GOTIT", val.Value, ' => last set:', tmpLastSetValue[cam.host]);
                     // console.log("VAL", val.Value, "=>", theValue + '%', 'pos =>', pos);
                     // context.xTouchMini.setControllerValue(config.iris.controller, pos);

@@ -203,7 +203,6 @@ export class XTouchMini {
                 this.connectionCheckTimer = setInterval(() => this.checkConnection(), 250);
                 this.isDeviceConnected = true;
                 this.connectedSubject.next(true);
-        
                 this.input.on('cc', (msg) => {
                     this.log.debug(`INPUT '{color:magenta}cc{color}' channel: ${msg.channel} controller: ${msg.controller} value: ${msg.value}`);
                     this.controllerChangeSubject.next(msg);
@@ -218,7 +217,6 @@ export class XTouchMini {
                     });
                     this.log.debug(`INPUT '{color:green}noteon{color}' channel: ${msg.channel} note: {color:cyan}${msg.note}{color} velocity: {color:yellow}${msg.velocity}{color}`);
                 });
-
                 this.input.on('noteoff', (msg) => {
                     this.noteChangeSubject.next({
                         type: 'off',
