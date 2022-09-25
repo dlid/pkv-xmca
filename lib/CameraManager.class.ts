@@ -1,4 +1,4 @@
-import { Camera, CameraConnectionStatus } from '@dlid/savona';
+import { Camera, CameraConnectionStatus } from './pxw-z190v';
 import { differenceInSeconds } from 'date-fns';
 import { BehaviorSubject, Observable, skip, Subject } from 'rxjs';
 import { LogService, Logger } from './log/logService.class';
@@ -11,7 +11,7 @@ export class CameraManager {
     constructor(private config: ConfigurationRoot) {
 
         this.logger = Logger.getInstance().for('cameraManager');
-        const savonaLogger = Logger.getInstance().for('@dlid/savona');
+        const savonaLogger = Logger.getInstance().for('@dlid/savona'); // TODO: Skip this and use a single logger instead
 
         const cameraConnectionAttempts: { [name: string]: number} = {};
         const cameraConnectionLastMessage: { [name: string]: Date} = {};

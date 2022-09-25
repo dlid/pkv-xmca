@@ -2,7 +2,7 @@ import { CameraManager } from './../CameraManager.class';
 import { Logger } from './../log/logService.class';
 import { ConfigurationRoot } from './../types/configuration.types';
 import { XTouchMini } from "../xTouchMini.class";
-import { CameraConnectionStatus } from '@dlid/savona';
+import { CameraConnectionStatus } from '../pxw-z190v';
 
 
 async function run(){
@@ -51,9 +51,6 @@ export function startup(config: ConfigurationRoot): Promise<PkvContext> {
                 first = false;
                 
                 process.stdin.resume(); //so the program will not close instantly
-
-                
-                
                 //do something when app is closing
               
 

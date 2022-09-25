@@ -93,7 +93,7 @@ export class XTouchMini {
 
             if (diff > 0) {
                 if ((diff % 30) === 0 && lastMessageSec !== diff) {
-                    this.log.info(`Still waiting for MIDI Device "{color:cyan}${this.deviceName}{color}"`);
+                    this.log.debug(`Still waiting for MIDI Device "{color:cyan}${this.deviceName}{color}"`);
                     lastMessageSec = diff;
                 }
             }
