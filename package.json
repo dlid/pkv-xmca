@@ -2,7 +2,7 @@
   "name": "@dlid/pkv-xmca",
   "version": "0.0.64",
   "description": "Small utility for camera control using XTouch mini",
-  "main": "dist/index.js",
+  "main": "dist/lib/index.js",
   "scripts": {
     "build": "node node_modules/typescript/bin/tsc",
     "start": "node node_modules/tsc-watch/index.js",

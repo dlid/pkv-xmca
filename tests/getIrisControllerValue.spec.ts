@@ -1,6 +1,10 @@
 import getIrisControllerValue from "../lib/functions/getIrisControllerValue";
 
 
+function getWhichControllerValueToSet() {
+  
+}
+
 
 describe('getIrisControllerValue', () => {
   test('Should find controller position', () => {
@@ -9,7 +13,12 @@ describe('getIrisControllerValue', () => {
         0, 14, 33, 441, 11, 12, 55
     ]
 
+
+
     expect(getIrisControllerValue(0, [])).toBe(5);
+
+
+
   });
 });
 

@@ -139,11 +139,13 @@ export class XTouchMini {
     }
 
     public setControllerValue(controller: number, value: number): void {
-        this.output?.send('cc', {
-            controller: controller,
-            value: value,
-            channel: 10
-        });
+        if (this.isConnected) {
+            this.output?.send('cc', {
+                controller: controller,
+                value: value,
+                channel: 10
+            });
+        }
     }
 
     public setNoteValue(note: number, velocity: number, channel: easymidi.Channel = 0): void {

@@ -72,7 +72,11 @@ export class Protocol extends LogBase {
        
         let connected = false;
         do {
-            connected = await this.connect();
+            try {
+                connected = await this.connect();
+            } catch (e) {
+                console.log("reconnect failed...");
+            }
             console.log("Connected:", connected);
         } while(!connected);
 

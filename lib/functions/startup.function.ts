@@ -3,6 +3,7 @@ import { Logger } from './../log/logService.class';
 import { ConfigurationRoot } from './../types/configuration.types';
 import { XTouchMini } from "../xTouchMini.class";
 import { CameraConnectionStatus } from '../pxw-z190v';
+import { CacheManager } from '../CacheManager.class';
 
 
 async function run(){
@@ -14,6 +15,7 @@ async function run(){
 export interface PkvContext {
     xTouchMini: XTouchMini;
     cameraManager: CameraManager;
+    cache: CacheManager;
 }
 
 function exitHandler(options: { exit?:  boolean, cleanup?: boolean, xTouch?: XTouchMini, cameraManager?: CameraManager }, exitCode: number) {
@@ -108,10 +110,12 @@ export function startup(config: ConfigurationRoot): Promise<PkvContext> {
                         // Let camera manager start trying to connect to cameras
                         
 
+
                         first = false;
                         resolve({
                             xTouchMini: xTouch,
-                            cameraManager: cameraManager
+                            cameraManager: cameraManager,
+                            cache: new CacheManager()
                         });
                     }
                 });

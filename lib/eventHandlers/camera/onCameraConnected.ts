@@ -18,8 +18,11 @@ export async function onCameraConnected(context: PkvContext, cameraName: string)
     // Call eventhandler to read current iris status
     await onCameraIrisAutoChanged(context, cameraName);
 
+    var irisValues = await cam.Iris.GetIrisValues();
+    context.cache.set(`camera.irisvalues:${cameraName}`, irisValues);
+
     // Call event handler to read current iris value
-    await onCameraIrisValueChanged(context, cameraName)
+    // await onCameraIrisValueChanged(context, cameraName)
 
 }
 

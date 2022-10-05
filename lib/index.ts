@@ -7,7 +7,7 @@ import { onCameraIrisValueChanged } from './eventHandlers/camera/onCameraIrisVal
 import { onControllerChange } from './eventHandlers/xTouchMini/onControllerChange';
 import { onButtonDown } from './eventHandlers/xTouchMini/onButtonDown';
 import applicationStart from './functions/applicationStart';
-
+console.log("x");
 // Parse Command Line Arguments and load configuration
 const config = applicationStart();
 
