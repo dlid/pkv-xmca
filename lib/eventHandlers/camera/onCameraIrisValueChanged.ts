@@ -1,4 +1,6 @@
 import { PkvContext } from "../../functions/startup.function";
+import { Logger } from "../../log/logService.class";
+import { IrisControllerRange } from "./onCameraConnected";
 
 let ts: NodeJS.Timeout;
 
@@ -9,6 +11,7 @@ let ts: NodeJS.Timeout;
  */
 export async function onCameraIrisValueChanged(context: PkvContext, cameraName: string, value?: number): Promise<void> {
 
+    const logger = Logger.getInstance().for('cameraIrisValueChanged');
     const cam = context.cameraManager.getCamera(cameraName);
 
     const updatedFromController = context.cache.get<boolean>(`iris_updated_from_controller:${cameraName}`, false);
@@ -26,22 +29,33 @@ export async function onCameraIrisValueChanged(context: PkvContext, cameraName: 
     if (irisControllerId) {                    
 
         let allValues: number[] =  context.cache.get<number[]>(`camera.irisvalues:${cameraName}`, []) ?? await cam.Iris.GetIrisValues();
+        const ranges = context.cache.get<IrisControllerRange[]>(`camera.controller.range:${cameraName}`) as IrisControllerRange[];
 
-        if (allValues.length == 0) {
+        if (allValues.length == 0) { 
             allValues = await cam.Iris.GetIrisValues();
         }
 
         var index = allValues.indexOf(irisNumericValue);
         
+        if (ranges) {
+        const rangeIndex = ranges?.findIndex(r => r.irisValue == irisNumericValue) ;
+
         // context.cache.set(`controller:${irisControllerId}`, index);
-        
+
+        context.xTouchMini.setControllerValue(irisControllerId, ranges[rangeIndex].startIndex);
+        context.cache.set(`controller:${irisControllerId}`, ranges[rangeIndex].startIndex);
+
+        logger.info(`Iris value changes from camera: ${irisNumericValue}`);
+
+        // console.log("Iris value index", irisNumericValue, rangeIndex, ranges[rangeIndex]);
+        // console.log("Iris updated. Set controller to ", ranges[rangeIndex].startIndex);
+
+        }
 
         const controllerIndex = (index - 5) * 5;
-  //      console.log("Iris value index", irisNumericValue, index);
-//        console.log("Iris updated. Set controller to ", controllerIndex);
+       
         // const index = await cam.Iris.GetValue();
-        context.xTouchMini.setControllerValue(irisControllerId, controllerIndex);
-        context.cache.set(`controller:${irisControllerId}`, controllerIndex);
+        
 
 
     }

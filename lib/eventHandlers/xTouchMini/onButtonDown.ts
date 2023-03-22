@@ -12,13 +12,10 @@ export async function onButtonDown(context: PkvContext, event: NotChangeEvent) {
 
     // This method is called for all buttons (notes) when they are pressed down
 
-
     // TOGGLE IRIS AUTO - find all buttons (notes) that have setManualNote setting to the current note and call method to handle it
     context.cameraManager.getCameraNames()
         .filter(c => context.cameraManager.getConfiguration(c).iris?.setManualNote == event.note)
-        .forEach(async cameraName => await onButtonDown_ToggleIrisAuto(context, cameraName) );
-
-    
+        .forEach(async cameraName => await onButtonDown_ToggleIrisAuto(context, cameraName, event.note) );
 
 }
 

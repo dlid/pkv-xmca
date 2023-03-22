@@ -12,13 +12,13 @@ import { onCameraIrisValueChanged } from "../camera/onCameraIrisValueChanged";
  * 
  * @see onButtonDown
  */
-export default async function onButtonDown_ToggleIrisAuto(context: PkvContext, cameraName: string): Promise<void> {
+export default async function onButtonDown_ToggleIrisAuto(context: PkvContext, cameraName: string, note: number): Promise<void> {
     const logger = Logger.getInstance().for('onButtonDown_ToggleIrisAuto');
     const cam = context.cameraManager.getCamera(cameraName);
     const currentSetting = await cam.Iris.GetSetting();
 
     if (currentSetting == 'Automatic') {
-        logger.info(`cameras.${cameraName} Setting Iris to Manual`);
+        logger.info(`{color:cyan}${cameraName}{color} Setting Iris to Manual`);
         await cam.Iris.SetManual();
         
         // Make sure we fetch the current iris value and update the controller etc.
@@ -26,8 +26,15 @@ export default async function onButtonDown_ToggleIrisAuto(context: PkvContext, c
     } 
     else
     {
-        logger.info(`cameras.${cameraName} Setting Iris to Automatic`);
+        logger.info(`{color:cyan}${cameraName}{color} Setting Iris to Automatic`, note);
         await cam.Iris.SetAuto();
+        
+        const xTouchButtonId = context.cameraManager.getConfiguration(cameraName).iris?.settingBlinkNote;
+        if (typeof xTouchButtonId !== 'undefined') {
+            setTimeout(() => {
+                context.xTouchMini.setNoteValue(xTouchButtonId, 2);
+            }, 250);
+        }
     }
 
 }

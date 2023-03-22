@@ -124,7 +124,7 @@ export class Camera extends LogBase {
     }
 
     public async test(): Promise<void> {
-
+console.log("test?");
         if (await this.connect()) {
             
         } else {

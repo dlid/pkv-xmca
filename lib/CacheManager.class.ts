@@ -13,7 +13,6 @@ export class CacheManager {
             expires: ttl != -1 ? (new Date().getTime()) + ttl : -1,
             value
         };
-//        console.log(`cache.set`, key, value);
     }
 
     public get<T>(key: string, defaultValue: T | null = null): T | null {

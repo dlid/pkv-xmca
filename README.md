@@ -4,6 +4,12 @@ Small utility for PXW-Z190V Camera control using XTouch mini
 
 Connects to PXW-Z190V cameras using @dlid/savona and binds them to a Behringer XTouch Mini device.
 
+# Requires 
+
+- Node.js 16.19.1
+
+
+http://192.168.0.81/
 # Installation 
 
 - Install NodeJS 16.17.1+ (Including Build Tools)
