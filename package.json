@@ -1,6 +1,6 @@
 {
   "name": "@dlid/pkv-xmca",
-  "version": "0.0.64",
+  "version": "0.0.7",
   "description": "Small utility for camera control using XTouch mini",
   "main": "dist/lib/index.js",
   "scripts": {
