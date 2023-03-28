@@ -93,7 +93,7 @@ export class XTouchMini {
 
             if (diff > 0) {
                 if ((diff % 30) === 0 && lastMessageSec !== diff) {
-                    this.log.info(`Still waiting for MIDI Device "{color:cyan}${this.deviceName}{color}"`);
+                    this.log.debug(`Still waiting for MIDI Device "{color:cyan}${this.deviceName}{color}"`);
                     lastMessageSec = diff;
                 }
             }
@@ -139,11 +139,13 @@ export class XTouchMini {
     }
 
     public setControllerValue(controller: number, value: number): void {
-        this.output?.send('cc', {
-            controller: controller,
-            value: value,
-            channel: 10
-        });
+        if (this.isConnected) {
+            this.output?.send('cc', {
+                controller: controller,
+                value: value,
+                channel: 10
+            });
+        }
     }
 
     public setNoteValue(note: number, velocity: number, channel: easymidi.Channel = 0): void {

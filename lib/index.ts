@@ -1,283 +1,48 @@
-import { Logger } from './log/logService.class';
-import { ConfigurationRoot } from './types/configuration.types';
-import { Camera, CameraConnectionStatus } from '@dlid/savona';
-import { loadConfiguration } from './functions/loadSettings.function';
-import { PkvContext, startup } from './functions/startup.function';
-import { Argument, Command  } from 'commander';
+import { CameraConnectionStatus } from './pxw-z190v';
+import { startup } from './functions/startup.function';
+import { onCameraConnected } from './eventHandlers/camera/onCameraConnected';
+import { filter } from 'rxjs';
+import { onCameraIrisAutoChanged } from './eventHandlers/camera/onCameraIrisAutoChanged';
+import { onCameraIrisValueChanged } from './eventHandlers/camera/onCameraIrisValueChanged';
+import { onControllerChange } from './eventHandlers/xTouchMini/onControllerChange';
+import { onButtonDown } from './eventHandlers/xTouchMini/onButtonDown';
+import applicationStart from './functions/applicationStart';
+console.log("x");
+// Parse Command Line Arguments and load configuration
+const config = applicationStart();
 
-import { resolveConfigurationPaths } from './functions/resolveConfigurationPaths';
-import { getConfigFilenameCommand } from './commands/get-config-filename.command';
-import { ControlChange } from 'easymidi';
-import { getVersion } from './functions/getVersion';
-import { differenceInMilliseconds } from 'date-fns';
-import { NotChangeEvent } from './xTouchMini.class';
-
-const program = new Command();
-const logger = Logger.getInstance();
-let configurationFile: string = '';
-let config: ConfigurationRoot | undefined;
-
-
-
-
-
-program.version(getVersion());
-
-// Command to list how configuration file will be searched for
-program.command('get-config-filename')
-    .addArgument(new Argument('[configFile]', 'Path to JSON file that you want to test how its loaded'))
-    .action((filename: string) => getConfigFilenameCommand(filename));
-
-program.addArgument(new Argument('[configFile]', 'Path to JSON file containing configuration').default('./pkv-xmca.json'))
-    .option('-v, --verbose', 'Extended logging output')
-    .action((configFile: string) => {
-        configurationFile = configFile;
-    })
-    .parse();
-
-const options = program.opts();
-
-// Setup log level
-if (options.verbose === true) {
-    logger.logLevel = 'debug';
-}
-
-logger.debug(`Loading configuration file`);
-for (let file of resolveConfigurationPaths(configurationFile)) {
-    config = loadConfiguration(file);
-    if (config) {
-        break;
-    }
-}
-
-if (!config) {
-    console.log("Configuration file was not found");
-    process.exit(13); 
-}
-
-let cameraIrisTimer: { [name: string]: NodeJS.Timeout} = {};
-let cameraIrisApplyMs = 250;
-
-
-
-async function onControllerChange(context: PkvContext, change: ControlChange): Promise<void> {
-    // Try to get all cameras that have a Controller action assigned
-    const cameras = context.cameraManager.getCamerasForController(change.controller, change.channel);
-    const controllerValueAsPercent = (change.value / 127);
-
-    
-    
-    // console.log(`${change.controller} => `, controllerValueAsPercent);
-
-    if (cameras.length === 1) {
-        
-        const cam = context.cameraManager.getCamera(cameras[0]);
-        const settings = context.cameraManager.getConfiguration(cameras[0]);
-        const allIrisValues = await cam.Iris.GetIrisValues();;
-        if (settings.iris?.controller == change.controller) {
-            if (cam.isConnected) {
-
-                console.log(allIrisValues);
-
-                if (change.value < allIrisValues.length) {
-                    console.log("SET TO", change.value, allIrisValues[change.value]);
-
-                    await cam.Iris.SetValue(allIrisValues[change.value] as number);
-                }
-
-
-                if (cameraIrisTimer[cam.host]) {
-                    clearTimeout(cameraIrisTimer[cam.host]);
-                }
-                const valueFromPercent = await cam.Iris.GetValueFromPercent(controllerValueAsPercent);
-                if (valueFromPercent && tmpLastSetValue[cam.host]?.value != change.value) {
-                    tmpLastSetValue[cam.host] = {value: change.value, time: new Date()};
-                    await cam.Iris.SetValue(change.value);
-                }
-
-            } else {
-                logger.info(`"{color:cyan}${cameras[0]}{color}" (${cam.host}) - is {color:yellow}not connected`);
-            }
-        }
-
-    }
-}
-
-async function onNoteChange(context: PkvContext, change: NotChangeEvent): Promise<void> {
-
-    if (change.type == 'on') {
-        context.cameraManager.getCameraNames().forEach(async camName => {
-            const config = context.cameraManager.getConfiguration(camName);
-            const cam = context.cameraManager.getCamera(camName);
-
-            logger.debug(`OnNoteChange`, change);
-
-            if (config.iris?.setManualNote) {
-                logger.debug(`camera config manual button`, config.iris?.setManualNote);
-                if (config.iris?.setManualNote == change.note) {
-                    const currentSetting = await cam.Iris.GetSetting();
-                    logger.debug(`iris setting`, currentSetting);
-                    if (currentSetting == 'Automatic') {
-                        logger.debug(`Setting to manual`);
-                        await cam.Iris.SetManual();
-                        const irisValue = await cam.Iris.GetValue();
-                        const irisValuePercent = await cam.Iris.GetPercentFromValue(irisValue);
-                        let pos = (irisValuePercent as number / 127) * 127;
-                        const irisController = context.cameraManager.getConfiguration(camName).iris?.controller;
-                        if (irisController) {                    
-                            context.xTouchMini.setControllerValue(irisController, pos)
-                        }
-                    } else {
-                        await cam.Iris.SetAuto();
-                    }
-                }
-            }
-
-        })
-    }
-
-}
-
-const tmpLastSetValue: { [key: string]: { value: number, time: Date }} = {};
+// const tmpLastSetValue: { [key: string]: { value: number, time: Date }} = {}; - use for something??
 
 (async () => {
-    await startup(config).then(context => {
-        context.xTouchMini.controllerChange.subscribe(async change => await onControllerChange(context, change));        
-        context.xTouchMini.noteChange.subscribe(async change => await onNoteChange(context, change))
 
-        // Subscribe to iris changes
-        context.cameraManager.getCameraNames().forEach(async cameraName => {
+    // Startup will init connections cameras and xTouchMini and make it available in the PkvContext
+    await startup(config).then(context => {
+        
+        // Subscribe to XTouch Mini Controller change event - when an XtouchMini knob is used
+        context.xTouchMini.controllerChange.subscribe(async change => await onControllerChange(context, change));        
+        
+        // Subscribe to XTouch Mini Note On Event - when an XTouchMini button is pressed down
+        context.xTouchMini.noteChange
+            .pipe(filter(n => n.type === 'on')) // on = Button pressed down, off = released
+            .subscribe(async change => await onButtonDown(context, change))
+
+        // Subscribe to camera events for each camera
+        for (const cameraName of context.cameraManager.getCameraNames()) {
+
             const cam = context.cameraManager.getCamera(cameraName);
 
-            cam.connectionStatus.subscribe(async status => {
-                if (status == CameraConnectionStatus.Connected) {
+            // Subscribe to Camera Connected change 
+            cam.connectionStatus
+                .pipe(filter(status => status == CameraConnectionStatus.Connected))
+                .subscribe(() => onCameraConnected(context, cameraName) );
 
-                    const settingValue = await cam.Iris.GetSetting();
-                    const settingNote = context.cameraManager.getConfiguration(cameraName).iris?.settingBlinkNote;
+            // Subscribe to Camera Iris auto/manual changes
+            cam.Iris.onSettingMethodChanged(async setting => onCameraIrisAutoChanged(context, cameraName, setting));
+            
+            // Subcribe to Cmaera Iris Value changes
+            cam.Iris.addChangeHandler(value => onCameraIrisValueChanged(context, cameraName, value.Value) );
 
-                    if (typeof settingNote !== 'undefined') {
-                        if (settingValue == 'Automatic') {
-                            context.xTouchMini.setNoteValue(settingNote, 2);
-                        } else {
-                            context.xTouchMini.setNoteValue(settingNote, 0);
-                        }
-                    }
-
-                   // await cam.Iris.SetAuto();
-
-                   // console.warn("LAAALAL", settingNote)
-                   // context.xTouchMini.setNoteValue(<any>settingNote, 2, 10);
-                   // context.xTouchMini.setNoteValue(2, 2);
-//                        cam.Iris.SetManual();
-
-                    const irisValue = await cam.Iris.GetValue();
-                    const irisValuePercent = await cam.Iris.GetPercentFromValue(irisValue);
-                    let pos = (irisValuePercent as number / 127) * 127;
-                    const irisController = context.cameraManager.getConfiguration(cameraName).iris?.controller;
-                    if (irisController) {                    
-
-                        var allValues = await cam.Iris.GetIrisValues();
-                        var index = allValues.indexOf(irisValue);
-                        
-                        context.xTouchMini.setControllerValue(irisController, index)
-
-                    }
-                }
-            });
-
-            cam.Iris.onSettingMethodChanged(async setting => {
-               // console.log("iris auto/manuell: ", setting);
-                const settingNote = context.cameraManager.getConfiguration(cameraName).iris?.settingBlinkNote;
-
-                if (typeof settingNote !== 'undefined') {
-                    if (setting == 'Automatic') {
-                        // console.log("SET", settingNote, "to", 2);
-                        context.xTouchMini.setNoteValue(settingNote, 2);
-                        setTimeout(() => {
-                            context.xTouchMini.setNoteValue(settingNote, 2);
-                        }, 100);
-
-
-                    } else {
-                        // console.log("SET", settingNote, "to", 0);
-                        context.xTouchMini.setNoteValue(settingNote, 0);
-
-                        
-                        const hej  = context.cameraManager.getConfiguration(cameraName).iris?.controller;
-                        if (hej) {
-                        var allValues = await cam.Iris.GetIrisValues();
-                        var currentvalue = await cam.Iris.GetValue();
-
-                        const index = allValues.indexOf(currentvalue);
-                        context.xTouchMini.setControllerValue(hej,  index);
-                        }
-
-
-                    }
-                }
-
-            })
-
-            cam.Iris.addChangeHandler(async val => {
-                
-                const config = context.cameraManager.getConfiguration(cameraName);
-
-//                console.log(val);
-
-                if (config.iris?.controller) {
-                    
-                    console.log("iris", val.Value);
-
-                    let theValue = await cam.Iris.GetPercentFromValue(val.Value as number) ;
-
-                    let pos = (theValue as number / 127) * 127;
-
-
-                    var allValues = await cam.Iris.GetIrisValues();
-
-                    // if (typeof val.Value != 'undefined') {
-                       
-                    // }
-
-                    console.log("blalblbal", tmpLastSetValue[cam.host]);
-
-                    if (tmpLastSetValue[cam.host]?.value != val.Value) {
-                        console.log("lakrits")
-                        if (tmpLastSetValue[cam.host]?.time) {
-                            const diff = differenceInMilliseconds(new Date(), tmpLastSetValue[cam.host].time);
-                            console.log("tid sedan sist", diff);
-                            if ( typeof diff !== 'undefined' && diff < 50) {
-                                return;
-                            }
-                        } 
-
-                        if (typeof val.Value != 'undefined' ) {
-                            const index = allValues.indexOf(val.Value);
-                            context.xTouchMini.setControllerValue(config.iris.controller,  index);
-                            tmpLastSetValue[cam.host] = {
-                                time: new Date(),
-                                value: val.Value
-                            }
-                        }
-                        
-
-                    }
-
-
-                    // console.log("GOTIT", val.Value, ' => last set:', tmpLastSetValue[cam.host]);
-                    // console.log("VAL", val.Value, "=>", theValue + '%', 'pos =>', pos);
-                    // context.xTouchMini.setControllerValue(config.iris.controller, pos);
-                    //context.xTouchMini.
-                    //stopControllerLoadingAnimation.
-
-
-                    //console.warn("CAMERA SAYS IRIS IS AT", val)
-
-                }
-
-            });
-
-        })
+        }
 
     })
 })();

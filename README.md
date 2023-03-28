@@ -1,25 +1,28 @@
-
-python 3.+
-npm install windows-build-tools (npm)
-
-
-
-
 # pkv-xmca
 
-Small utility for camera control using XTouch mini
+Small utility for PXW-Z190V Camera control using XTouch mini
 
 Connects to PXW-Z190V cameras using @dlid/savona and binds them to a Behringer XTouch Mini device.
 
-Can currently bind IRIS control to a Controller (knob)
+# Requires 
 
-Note: Temporarily using ../ file version of dlid/savona during development
+- Node.js 16.19.1
 
-# Installation
 
-You probably want to install this tool globally:
+http://192.168.0.81/
+# Installation 
 
-    npm install @dlid/pkv-xmca -g
+- Install NodeJS 16.17.1+ (Including Build Tools)
+- Run `npm install` in repository folder
+- Run `node ./ [config.json]` in repository folder
+
+# Development
+
+- Recommended tools
+  - [Cmder]([Cmder](https://cmder.app/)) - a better Windows terminal
+  - [VSCode](https://code.visualstudio.com/) - as editor
+- Run `npm start` in repository folder to watch TypeScript file changes and automatically build
+- Run `node ./ [config.json]` in repository folder to run the latest code
 
 # Basic use
 
@@ -32,14 +35,8 @@ Run pkv-xmca and point toward your configuration file:
     pkv-xmca ./pkv-xmca.json
 
 
-
-
-
-
-
 # Thank you's
 
-- @dlid/savona - is used to talk to the cameras
 - [commander](https://www.npmjs.com/package/commander) - is used for parsing command line arguments
 - [date-fns](https://www.npmjs.com/package/date-fns) - is used for date formatting in logs
 - [easymidi](https://www.npmjs.com/package/easymidi) - is used to talk to X-Touch MINI
