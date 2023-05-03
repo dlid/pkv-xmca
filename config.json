@@ -9,16 +9,27 @@
                 "settingBlinkNote": 0,
                 "setManualNote": 8
             }
-        },
-        "camera2": {
-            "host": "192.168.0.82",
-            "username": "admin",
-            "password": "ABCDEF11",
-            "iris": {
-                "controller": 2,
-                "settingBlinkNote": 1,
-                "setManualNote": 9
-            }
         }
-    }
+    },
+    "aa": {
+    "camera2": {
+        "host": "192.168.0.82",
+        "username": "admin",
+        "password": "ABCDEF11",
+        "iris": {
+            "controller": 2,
+            "settingBlinkNote": 1,
+            "setManualNote": 9
+        }
+    },
+    "camera3": {
+        "host": "192.168.0.83",
+        "username": "admin",
+        "password": "ABCDEF11",
+        "iris": {
+            "controller": 2,
+            "settingBlinkNote": 1,
+            "setManualNote": 9
+        }
+    }}
 }

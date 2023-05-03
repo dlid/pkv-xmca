@@ -35,6 +35,7 @@ export default function applicationStart(): ConfigurationRoot {
 
     // Setup log level
     if (commandLineOptions.verbose === true) {
+        Logger.getInstance().logLevel = 'debug';
         logger.logLevel = 'debug';
     }
 

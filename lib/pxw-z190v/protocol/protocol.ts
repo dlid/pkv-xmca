@@ -3,6 +3,8 @@ import { ConnectionDetails, CameraRequest } from './protocol.types';
 import * as axios from 'axios'
 import WebSocket from 'ws';
 import { LogBase } from '../log/log-base.class';
+import { Logger , LogService} from '../../log/logService.class';
+
 const msgpack = require('msgpack');
 
 
@@ -64,6 +66,7 @@ export class Protocol extends LogBase {
         do {
             id = 4294967295 <= id ? 0 : id + 1;
         } while (this.requests[id]);
+
         return id;        
     }
 
@@ -128,6 +131,8 @@ export class Protocol extends LogBase {
 
                         const svaret = await this.AlternateAuthenticationBasic(this.savonaUser, this.savonaPassword);
 
+                       // lgg("AAAA", svaret)
+
                         this.debug(`Fetching properties`);
                         await this.request('Notify.Subscribe', ["Notify.Properties", "Notify.Process", "Notify.Property"]);
 
@@ -156,11 +161,14 @@ export class Protocol extends LogBase {
             });
     
             this.ws.on('message', function incoming(data: any) {
-                
+
+
                 if (data) {
                     const unpacked = msgpack.unpack(data);
+                  //  console.log("message", data, unpacked);
                     if (unpacked) {
                         const [type, id, data1, data2] = unpacked;
+
 
 
                         if (type === 1) {
@@ -173,6 +181,7 @@ export class Protocol extends LogBase {
                         } else if (type === 2) { // Notification
 
                           //  if ()
+//                          console.warn(">", id, data1);
 
                             if (id === 'Notify.Property.Value.Changed') {
 
@@ -184,7 +193,7 @@ export class Protocol extends LogBase {
                                 } else if (data[0]['P.Clip.Mediabox.TimeCode.Value']) {
 
                                 } else {
-//                                   console.log("[NOTIFICATION]", id, data1);
+                                  // console.log("[NOTIFICATION]", id, data1);
                                 }
                             }
                         } else {
@@ -253,7 +262,8 @@ export class Protocol extends LogBase {
         // }
         const da = msgpack.pack(data);
 
-       // console.log("send", JSON.stringify(data));
+     // console.log("send", JSON.stringify(data));
+
 
        await this.connect();
 
@@ -299,6 +309,9 @@ export class Protocol extends LogBase {
             const cred = (response.data as string).split(':');
             this.savonaUser = cred[0];
             this.savonaPassword = cred[1];
+
+            this.debug('Credentials response', response.data as string);
+
 
             this.savonaCredentials = {
                 host: this.connectionDetails.host,

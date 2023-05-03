@@ -93,7 +93,7 @@ export class CameraManager {
         this.cameras[cameraName].connect().then(x => {
             
         }).catch(nej => {
-            console.log("error connecting...");
+//            this.logger.info(`Could not connect to camera {color:cyan}${cameraName}`);
             setTimeout( () => this.tryConnect(cameraName), 5000)
         });
     }

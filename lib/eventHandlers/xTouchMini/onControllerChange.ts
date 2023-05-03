@@ -15,6 +15,10 @@ export async function onControllerChange(context: PkvContext, change: ControlCha
 
     const log = Logger.getInstance().for('onControllerChange');
 
+    try {
+
+
+
     // Try to get all cameras that have a Controller action assigned
     const cameras = context.cameraManager.getCamerasForController(change.controller, change.channel);
     
@@ -67,7 +71,12 @@ export async function onControllerChange(context: PkvContext, change: ControlCha
                             changeTo = ranges[ix -1];
                         }
 
-                        log.info( `{color:cyan}${cameras[0]}{color} Iris value changes from controller: ${changeTo.irisValue}`);
+                        if (!changeTo) {
+                            log.warn( `Iris value changed but changeTo was nullish`);
+                            return;
+                        }
+
+                        log.debug( `{color:cyan}${cameras[0]}{color} Iris value changes from controller: ${changeTo.irisValue}`);
 
                         // console.log("OK PREV WAS ", current);
                         // console.log("OK NEXT IS ", changeTo);
@@ -187,4 +196,9 @@ export async function onControllerChange(context: PkvContext, change: ControlCha
         }
 
     }
+    } catch (e) {
+        log.error(`Error occured here`, e);
+        throw e;
+    }
+
 }

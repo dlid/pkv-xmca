@@ -11,7 +11,7 @@ let ts: NodeJS.Timeout;
  */
 export async function onCameraIrisValueChanged(context: PkvContext, cameraName: string, value?: number): Promise<void> {
 
-    const logger = Logger.getInstance().for('cameraIrisValueChanged');
+    const logger = Logger.getInstance().for('onCameraIrisValueChanged');
     const cam = context.cameraManager.getCamera(cameraName);
 
     const updatedFromController = context.cache.get<boolean>(`iris_updated_from_controller:${cameraName}`, false);
@@ -45,7 +45,7 @@ export async function onCameraIrisValueChanged(context: PkvContext, cameraName: 
         context.xTouchMini.setControllerValue(irisControllerId, ranges[rangeIndex].startIndex);
         context.cache.set(`controller:${irisControllerId}`, ranges[rangeIndex].startIndex);
 
-        logger.info(`Iris value changes from camera: ${irisNumericValue}`);
+        logger.debug(`Iris value changes from camera: ${irisNumericValue}`);
 
         // console.log("Iris value index", irisNumericValue, rangeIndex, ranges[rangeIndex]);
         // console.log("Iris updated. Set controller to ", ranges[rangeIndex].startIndex);
